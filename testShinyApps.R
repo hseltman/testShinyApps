@@ -151,14 +151,15 @@ testShinyApps = function(needed=NULL, ids=NULL,
     } else if (missCnt==1) {
       cat("\nFor student '", id, "', version=", version,
           ", ", ifelse(length(fUi) == 0, "'ui.R'", "'server.R'"),
-          " is missing", sep="")
+          " is missing\n", sep="")
+      next
     }
     
     # Get student UI file contents and add functionality to label the 
     # browser window with the student's id.
     uiCode = try(readLines(fUi, warn=FALSE))
     if (is(uiCode, "try-error")) {
-      cat("\ncannot read '", fUi, "' for '", id, "'")
+      cat("\ncannot read '", fUi, "' for '", id, "'\n")
       next
     }
     titleLoc = grep("titlePanel[(].*[)]", uiCode)
@@ -185,7 +186,8 @@ testShinyApps = function(needed=NULL, ids=NULL,
         }
       }
       if (!OK) {
-        cat("\nNote: titlePanel() too complex to modify for '", id, "'", sep="")
+        cat("\nNote: titlePanel() too complex to modify for '",
+            id, "'\n", sep="")
       } else {
         if (commaCount == 1) {
           # Process a "titlePanel(title)," styled line
@@ -220,7 +222,8 @@ testShinyApps = function(needed=NULL, ids=NULL,
             commaIndex = which(commaLoc != -1)
             if (length(commaIndex) != 2) {
               OK = FALSE
-              cat("\nNote: titlePanel() too complex to modify for '", id, "'", sep="")
+              cat("\nNote: titlePanel() too complex to modify for '",
+                  id, "'\n", sep="")
             } else {
               commaIndex = commaIndex[1]
               line = paste0(substring(line, 1,
@@ -238,7 +241,7 @@ testShinyApps = function(needed=NULL, ids=NULL,
     fSand = file.path(sandbox, "ui.R")
     rtn = try(write(uiCode, fSand))
     if (is(rtn, "try-error")) {
-      cat("\ncannot write '", fSand, "' for '", id, "'")
+      cat("\ncannot write '", fSand, "' for '", id, "'\n")
       next
     }
     
@@ -246,7 +249,7 @@ testShinyApps = function(needed=NULL, ids=NULL,
     # exiting this function. 
     serverCode = try(readLines(fServer, warn=FALSE))
     if (is(serverCode, "try-error")) {
-      cat("\ncannot read '", fServer, "' for '", id, "'")
+      cat("\ncannot read '", fServer, "' for '", id, "'\n")
       next
     }
     funLoc = grep("function\\s*[(]\\s*input\\s*,\\s*output", serverCode)
@@ -264,7 +267,7 @@ testShinyApps = function(needed=NULL, ids=NULL,
     fSand = file.path(sandbox, "server.R")
     rtn = try(write(serverCode, fSand))
     if (is(rtn, "try-error")) {
-      cat("\ncannot write '", fSand, "' for '", id, "'")
+      cat("\ncannot write '", fSand, "' for '", id, "'\n")
       next
     }
     
@@ -326,7 +329,7 @@ showError = function(tryResult, fileSource, sandbox, id, display.mode) {
              paste0("  titlePanel('Student Error', '", 
                     id, "'),"),
              paste0("  p(strong('Error in ", fileSource,
-                    " for ", id, ":')),"),
+                    " for \"", id, "\":')),"),
              paste0("  p('", 
                     trimws(as.character(attr(tryResult, "condition"))),
                     "')"),
