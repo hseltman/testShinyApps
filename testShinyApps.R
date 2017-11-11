@@ -283,11 +283,76 @@ testShinyApps = function(needed=NULL, ids=NULL,
     }
     
     # Run the app
-    runApp(sandbox, launch.browser=TRUE, display.mode=display.mode)
+    testEnv = new.env()
+    tryResult = try(source(file.path(sandbox, "ui.R"), local=testEnv),
+                    silent=TRUE)
+    if (is(tryResult, "try-error")) {
+      showError(tryResult, "ui.R", sandbox, id, display.mode)
+    } else {
+      tryResult = try(source(file.path(sandbox, "server.R"), local=testEnv),
+                      silent=TRUE)
+      if (is(tryResult, "try-error")) {
+        showError(tryResult, "server.R", sandbox, id, display.mode)
+      } else {
+        runApp(sandbox, launch.browser=TRUE, display.mode=display.mode)
+      }
+    }  # end of "run the app"
+    rm(testEnv)
   }  # end "for (id in ids)"
   
   invisible(ids)
 }  # end testShinyApps()
+
+
+# showError() renames 'ui.R' and 'server.R' to 'ui_usersId.R' and
+# 'server_usersId.R', and creates ui.R and server.R that contain the
+# error message in 'tryResult'
+showError = function(tryResult, fileSource, sandbox, id, display.mode) {
+  # renames
+  fSandUi = file.path(sandbox, "ui.R")
+  fUser = paste0("ui_", id, ".R")
+  if (!file.rename(fSandUi, file.path(sandbox, fUser))) {
+    stop("cannot rename '", fSandUi, '" to "', fUser, "'")
+  }
+  fSandServer = file.path(sandbox, "server.R")
+  fUser = paste0("server_", id, ".R")
+  if (!file.rename(fSandServer, file.path(sandbox, fUser))) {
+    stop("cannot rename '", fSandServer, '" to "', fUser, "'")
+  }
+  
+  # create stub Shiny app with error information
+  uiCode = c("library(shiny)",
+             "fluidPage(",
+             paste0("  titlePanel('Student Error', '", 
+                    id, "'),"),
+             paste0("  p(strong('Error in ", fileSource,
+                    " for ", id, ":')),"),
+             paste0("  p('", 
+                    trimws(as.character(attr(tryResult, "condition"))),
+                    "')"),
+             ")")
+  serverCode = c("library(shiny)",
+                 "function(input, output, session) {",
+                 "  session$onSessionEnded(function() {",
+                 "     stopApp()",
+                 "  })",
+                 "  ",
+                 "}")
+  rtn = try(write(uiCode, fSandUi))
+  if (is(rtn, "try-error")) {
+    stop("\ncannot write error version of'", fSandUi,
+        "' for '", id, "'")
+  }  
+  rtn = try(write(serverCode, fSandServer))
+  if (is(rtn, "try-error")) {
+    stop("\ncannot write error version of'", fSandServer,
+         "' for '", id, "'")
+  }  
+  
+  runApp(sandbox, launch.browser=TRUE, display.mode=display.mode)
+  
+  return(NULL)
+}
 
 
 # Test code
